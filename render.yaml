@@ -1,0 +1,50 @@
+# Render Blueprint for RG Home Aley.
+# Two services: the API (Node/Express/Prisma) and the static web front-end (Vite build).
+# Database is Neon Postgres. Secret env vars are set in the Render dashboard (sync: false).
+services:
+  - type: web
+    name: rghome-api
+    runtime: node
+    rootDir: server
+    plan: free
+    region: virginia
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: WEB_URL
+        fromService:
+          type: web
+          name: rghome-web
+          property: host
+
+  - type: web
+    name: rghome-web
+    runtime: static
+    rootDir: web
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: rghome-api
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
