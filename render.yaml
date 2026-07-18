@@ -8,7 +8,7 @@ services:
     rootDir: server
     plan: free
     region: virginia
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -36,7 +36,7 @@ services:
     name: rghome-web
     runtime: static
     rootDir: web
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
