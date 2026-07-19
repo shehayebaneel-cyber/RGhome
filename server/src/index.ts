@@ -15,14 +15,22 @@ const WEB_URL = process.env.WEB_URL || "http://localhost:5173";
 
 app.use(express.json());
 app.use(cookieParser());
-// WEB_URL may arrive as a bare hostname (Render fromService) or full origin(s).
+// Configured origins from WEB_URL, plus a resilient fallback: any *.onrender.com host and
+// localhost. Render's fromService WEB_URL wiring can arrive empty/wrong, which would otherwise
+// break CORS for the deployed front-end, so we don't depend on it alone.
 const allowedOrigins = WEB_URL.split(",")
   .map((s) => s.trim())
   .filter(Boolean)
   .map((s) => (/^https?:\/\//.test(s) ? s : "https://" + s));
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, cb) {
+      if (!origin) return cb(null, true);
+      let host = "";
+      try { host = new URL(origin).hostname; } catch { /* ignore */ }
+      const ok = allowedOrigins.includes(origin) || /\.onrender\.com$/.test(host) || host === "localhost" || host === "127.0.0.1";
+      cb(null, ok);
+    },
     credentials: true,
   })
 );
